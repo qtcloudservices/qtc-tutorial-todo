@@ -1,0 +1,23 @@
+<div id="container" class="container">
+    <div class="header">
+        <ul class="nav nav-pills pull-right">
+            <% if(session && (session != "")) { %>
+                <li id="loggedInUserName"><%= name %></li>
+                <li id="logoutMenuItem"><a href="#logout">Logout</a></li>
+                <li id="loginMenuItem" class="hide"><a href="#login">Login</a></li>
+            <% } else { %>
+                <li id="loggedInUserName" class="hide"></li>
+                <li id="logoutMenuItem" class="hide"><a href="#logout">Logout</a></li>
+                <li id="loginMenuItem"><a href="#login">Login</a></li>
+            <% } %>
+        </ul>
+        <a class="navbar-brand" href="#">Todo</a>
+    </div>
+
+    <div id="main">
+    </div>
+
+    <div class="footer text-center">
+        <p>Read the <a href="">tutorial</a>.</p>
+    </div>
+</div>

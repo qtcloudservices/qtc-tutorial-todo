@@ -1,0 +1,28 @@
+<div class="row">
+    <div class="col-md-6 col-md-offset-3">
+        <div class="input-group">
+            <input id="addtodotext" type="text" class="form-control">
+            <span class="input-group-btn">
+                <button id="addtodo" class="btn btn-default btn-primary" type="button">Add</button>
+            </span>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6 col-md-offset-3">
+        <% if(todos && (todos.length > 0)) { %>
+        <ul class="list-group todolist">
+            <% for(var i=0; i<todos.length; i++) { %>
+            <li class="list-group-item">
+                <button type="button" class="btn btn-danger btn-xs removetodo" data-todo="<%= todos[i].id %>"><span class="glyphicon glyphicon-remove"></span></button>
+                <div class="todotext"><%= todoApp.htmlDecode(todos[i].text) %></div>
+            </li>
+            <% } %>
+        </ul>
+        <% } else { %>
+        <div class="text-center">
+            <h3 class="text-muted">You don't have any todos.</h3>
+        </div>
+        <% } %>
+    </div>
+</div>

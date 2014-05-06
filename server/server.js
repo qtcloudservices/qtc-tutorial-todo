@@ -8,13 +8,13 @@ var express_client_sessions = require("client-sessions");
 var express_cookie_parser = require("cookie-parser");
 
 var app = express();
-app.use(express.static(__dirname + '/public'));
+app.use(express.static('../html5client'));
 app.use(express_body_parser());
 app.use(express_method_override());
 app.use(express_cookie_parser());
 
-// routes
-require('./lib/routes.js')(app);
+// api routes
+require('./api/routes.js')(app);
 
 // main
 app.listen(port);

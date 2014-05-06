@@ -12,6 +12,8 @@ The source code is organized as follows:
 
 ## Installing and starting the server
 
+Get the tutorial sourcecode and copy the sample configuration file `server/config/qtc-conf.default.js` to `server/config/qtc-conf.js` and edit the configuration to match your current EDS configuration.
+
 While at the root directory of this tutorial, type the following into a terminal window:
 
 ```sh

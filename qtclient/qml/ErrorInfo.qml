@@ -42,7 +42,7 @@ import QtQuick 2.0
 
 Rectangle {
     width: parent.width
-    height: parent.height * 0.07
+    height: parent.width * 0.08
     y: -height
     color: "#77ff4c4c"
 
@@ -69,10 +69,10 @@ Rectangle {
         onTriggered: hide()
     }
 
-    Text {
+    TodoText {
         id: t
-        anchors.centerIn: parent
-        font.pixelSize: Math.min(parent.width*0.08, parent.height*0.3)
+        anchors { fill: parent; margins: parent.width * 0.02 }
+        wrapMode: Text.WordWrap
     }
 
     Rectangle {

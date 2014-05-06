@@ -1,0 +1,295 @@
+/****************************************************************************
+**
+** Copyright (C) 2014 Digia Plc and/or its subsidiary(-ies).
+** Contact: http://www.qt-project.org/legal
+**
+** This file is part of the examples of the Qt Toolkit.
+**
+** $QT_BEGIN_LICENSE:BSD$
+** You may use this file under the terms of the BSD license as follows:
+**
+** "Redistribution and use in source and binary forms, with or without
+** modification, are permitted provided that the following conditions are
+** met:
+**   * Redistributions of source code must retain the above copyright
+**     notice, this list of conditions and the following disclaimer.
+**   * Redistributions in binary form must reproduce the above copyright
+**     notice, this list of conditions and the following disclaimer in
+**     the documentation and/or other materials provided with the
+**     distribution.
+**   * Neither the name of Digia Plc and its Subsidiary(-ies) nor the names
+**     of its contributors may be used to endorse or promote products derived
+**     from this software without specific prior written permission.
+**
+**
+** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+** OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+** LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+** DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+** THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+** (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+** OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+**
+** $QT_END_LICENSE$
+**
+****************************************************************************/
+
+#include "storage.h"
+#include <QtDebug>
+
+#define REQUEST_URL "http://ry7rixrh.staging-mar-eu-1.qtc.io"
+#define REFRESH_INTERVAL 10000
+
+Storage::Storage(ItemModel *model, QObject *parent) :
+    QObject(parent),
+    m_model(model),
+    m_networkManager(0),
+    m_loading(false),
+    m_loggedIn(false),
+    m_loggedName(""),
+    m_sessionId(""),
+    m_localIndex(0),
+    m_queueLength(0)
+{
+    //The QNetworkAccessManager class allows the application to send network requests and receive replies
+    m_networkManager = new QNetworkAccessManager(this);
+    connect(m_networkManager, SIGNAL(finished(QNetworkReply*)), this, SLOT(requestFinished(QNetworkReply*)));
+
+    //Configure refresh timer
+    connect(&m_refreshTimer, SIGNAL(timeout()), this, SLOT(refreshItems()));
+    m_refreshTimer.setInterval(REFRESH_INTERVAL);
+}
+
+
+void Storage::registerUser(const QString &name, const QString& username, const QString& password)
+{
+    QJsonObject data;
+    data["name"] = name;
+    data["username"] = username;
+    data["password"] = password;
+
+    // Send registration information to the server
+    startRequest(createRequest("/api/register"), RegisterUser, true, data);
+}
+
+void Storage::loginUser(const QString& username, const QString& password)
+{
+    QJsonObject data;
+    data["username"] = username;
+    data["password"] = password;
+
+    // Send login information to the server
+    startRequest(createRequest("/api/login"), LoginUser, true, data);
+}
+
+void Storage::logoutUser()
+{
+    // Send logout-info to the server
+    startRequest(createRequest("/api/logout", true), LogoutUser, false);
+
+    // Logout locally
+    m_refreshTimer.stop();
+    m_model->clearItems();
+    setLogged(false, "", "");
+}
+
+void Storage::refreshItems()
+{
+    // Request all items from the server and update changed items to the local model. See requestFinished
+    // We send refresh query only if there is no any pending requests
+    if (m_queueLength == 0)
+        startRequest(createRequest("/api/todos", true), RefreshItems, false);
+}
+
+void Storage::initItems()
+{
+    // Request all items from the server and init local model. See requestFinished
+    startRequest(createRequest("/api/todos", true), InitItems);
+}
+
+void Storage::addItem(const QString& name)
+{
+    // Generate new localId and add item to the model with localId
+    QString localId = QString("localId_%1").arg(++m_localIndex);
+    m_model->addItem(localId, name, false, true);
+
+    QJsonObject data;
+    data["text"] = name;
+    data["done"] = false;
+
+    // Send request to the server
+    QNetworkReply *reply = startRequest(createRequest("/api/todos", true), AddItem, false, data);
+    if (reply != 0)
+        reply->setProperty("localId", localId);
+}
+
+void Storage::finishItem(int row)
+{
+    // Set item in processing mode and finish it
+    QString id = m_model->itemId(row);
+    m_model->setProcessing(row, true);
+    m_model->finishItem(row);
+
+    // Send requeset to the server
+    QJsonObject data;
+    data["done"] = true;
+    startRequest(createRequest(QString("/api/todos/%1").arg(id), true), FinishItem, false, data);
+}
+
+void Storage::deleteItem(int row)
+{
+    // Delete item from model and send request to the server
+    QString id = m_model->itemId(row);
+    m_model->deleteItem(row);
+    startRequest(createRequest(QString("/api/todos/%1").arg(id), true), DeleteItem, false);
+}
+
+QNetworkRequest Storage::createRequest(const QString &path, bool sessionId)
+{
+    QNetworkRequest request;
+    request.setUrl(QUrl(QString("%1%2").arg(REQUEST_URL).arg(path)));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    if (sessionId)
+        request.setRawHeader(QByteArray("x-todo-session"), m_sessionId);
+
+    return request;
+}
+
+QNetworkReply* Storage::startRequest(const QNetworkRequest& request, Storage::RequestType type, bool loading, const QJsonObject& data)
+{
+
+    // Set loading flag
+    setLoading(loading);
+
+    // Send request depends on the RequestType
+    QNetworkReply *reply = 0;
+    switch(type) {
+    case RegisterUser:
+    case LoginUser:
+    case AddItem:
+        reply = m_networkManager->post(request, QJsonDocument(data).toJson());
+        break;
+    case LogoutUser:
+    case InitItems:
+    case RefreshItems:
+        reply = m_networkManager->get(request);
+        break;
+    case FinishItem:
+        reply = m_networkManager->put(request, QJsonDocument(data).toJson());
+        break;
+    case DeleteItem:
+        reply = m_networkManager->deleteResource(request);
+        break;
+    default: break;
+    }
+
+    // If request is ok, we set requestType to the reply and handle reply in requestFinished-slot depending on this type
+    if (reply != 0) {
+        reply->setProperty("requestType", type);
+        m_queueLength++;
+    }
+}
+
+bool Storage::isError(const QJsonDocument& data)
+{
+    // Check if data includes an error
+    if (data.isObject()) {
+        QJsonObject d = data.object();
+        if (d.contains("error")) {
+            d = d.value("error").toObject();
+            emit errorOccurred(d.value("code").toInt(), d.value("message").toString());
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void Storage::requestFinished(QNetworkReply *reply)
+{
+    // Get requestType from the reply
+    RequestType requestType = (RequestType)reply->property("requestType").toInt();
+    m_queueLength--;
+
+    // Set loading false
+    setLoading(false);
+
+    // Check reply
+    if (reply->error() != QNetworkReply::NoError) {
+        emit errorOccurred((int)reply->error(), reply->errorString());
+    }
+    else if (requestType != LogoutUser) {
+        QJsonDocument replyData = QJsonDocument::fromJson(reply->readAll());
+        if (!isError(replyData)) {
+            switch (requestType) {
+            case RegisterUser:
+            {
+                // Send signal that user has registered
+                emit userRegistered();
+                break;
+            }
+            case LoginUser:
+            {
+                // Login user, start refreshTimer
+                m_refreshTimer.start();
+                QJsonObject data = replyData.object();
+                setLogged(true, data.value("name").toString(), data.value("session").toString().toUtf8());
+                emit userLogged();
+                break;
+            }
+            case InitItems:
+            {
+                // Init all todo-items. This will occurs just after logging in
+                m_model->initData(replyData.array());
+                m_localIndex = m_model->rowCount() + 1;
+                break;
+            }
+            case RefreshItems:
+            {
+                // Refresh items. When user has logged in, we request/refresh items now and then (see REFRESH_INTERVAL)
+                QJsonArray array = replyData.array();
+                m_model->refreshData(array);
+                break;
+            }
+            case AddItem:
+            {
+                // When user wants to add item, we add it to the local model immediately (see addItem())
+                // Here we receive the global id to the added item and update it
+                // updateLocalId-function also set processing-flag to false for this item
+                m_model->updateLocalId(reply->property("localId").toString(), replyData.object().value("id").toString());
+                break;
+            }
+            case FinishItem:
+            {
+                // When we receive this request, it means that item has succesfully modified in the server side.
+                // So we can set processing-flag to false for this item.
+                m_model->setProcessing(replyData.object().value("id").toString(), false);
+                break;
+            }
+            default: break;
+            }
+        }
+    }
+
+    reply->deleteLater();
+}
+
+void Storage::setLoading(bool para)
+{
+    m_loading = para;
+    emit loadingChanged();
+}
+
+void Storage::setLogged(bool para, const QString& name, const QByteArray& sessionId)
+{
+    m_loggedIn = para;
+    m_loggedName = name;
+    m_sessionId = sessionId;
+
+    emit loggedInChanged();
+}

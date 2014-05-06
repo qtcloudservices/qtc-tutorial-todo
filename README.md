@@ -32,9 +32,10 @@ node server/server.js
 Many of the Server APIs require valid session id. The session id can be obtained by logging in user. Once session id is obtained, it may be used with API requests.
 
 There are following options for including session with the API request:
-1. Use Cookies. Set cookie "session" with the value obtained from login.
-2. Use Headers. Set header "x-todo-session" with the value obtained from login.
-3. Use query string. Set query string parameter "session" with the value obtained from login.
+
+1. Use Cookies. Set cookie `session` with the value obtained from login.
+2. Use Headers. Set header `x-todo-session` with the value obtained from login.
+3. Use query string. Set query string parameter `session` with the value obtained from login.
 
 ### POST /api/register
 Register new user.

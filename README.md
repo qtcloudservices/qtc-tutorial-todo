@@ -2,6 +2,28 @@
 
 Creating Serverside, Cross-Platform (HTML5 & Qt) Cloud Todo Application with Qt Cloud Services
 
+## Structure of Code
+
+The source code is organized as follows:
+
+* **Server** - The source code can be found in `server` directory.
+* **Qt Client** - The source code can be found in `qtclient` directory.
+* **HTML 5 Client** - The source code can be found in `html5client` directory.
+
+## Installing and starting the server
+
+While at the root directory of this tutorial, type the following into a terminal window:
+
+```sh
+npm install
+```
+
+Once the NPM packages are installed, start the server:
+
+```sh
+node server/server.js
+```
+
 ## Server API
 
 ### About Sessions

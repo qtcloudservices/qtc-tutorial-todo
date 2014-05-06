@@ -8,7 +8,7 @@ var express_client_sessions = require("client-sessions");
 var express_cookie_parser = require("cookie-parser");
 
 var app = express();
-app.use(express.static('../html5client'));
+app.use(express.static(require('path').resolve(__dirname, '../html5client')));
 app.use(express_body_parser());
 app.use(express_method_override());
 app.use(express_cookie_parser());

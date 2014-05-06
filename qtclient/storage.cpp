@@ -162,12 +162,12 @@ QNetworkRequest Storage::createRequest(const QString &path, bool sessionId)
 
 QNetworkReply* Storage::startRequest(const QNetworkRequest& request, Storage::RequestType type, bool loading, const QJsonObject& data)
 {
-
     // Set loading flag
     setLoading(loading);
 
     // Send request depends on the RequestType
     QNetworkReply *reply = 0;
+
     switch(type) {
     case RegisterUser:
     case LoginUser:
@@ -193,6 +193,8 @@ QNetworkReply* Storage::startRequest(const QNetworkRequest& request, Storage::Re
         reply->setProperty("requestType", type);
         m_queueLength++;
     }
+
+    return reply;
 }
 
 bool Storage::isError(const QJsonDocument& data)

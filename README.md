@@ -1,8 +1,8 @@
 # Qt Cloud Services Tutorial
 
-Creating Serverside, Cross-Platform (HTML5 & Qt) Cloud Todo Application with Qt Cloud Services
+Creating Server-side, Cross-Platform and N-Screen (HTML5 & Qt) Cloud Todo Application with Qt Cloud Services. The purpose of this tutorial is to demonstrate how to use Qt Cloud Services from serverside to serve Qt and HTML5 client applications.
 
-Technologies used in this tutorial:
+Technologies used:
 * Qt Cloud Services, Enginio Data Storage - for cloud based data storage
 * Node.js - for serverside
 * HTML5, jQuery, Bootstrap, Backbone - for web clients

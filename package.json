@@ -28,5 +28,8 @@
         "express-method-override":"",
         "cookie-parser":"",
         "client-sessions":""
-	}
+	},
+    "scripts": {
+        "start": "node server/server.js"
+    }
 }

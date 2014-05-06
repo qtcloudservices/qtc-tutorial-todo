@@ -2,6 +2,12 @@
 
 Creating Serverside, Cross-Platform (HTML5 & Qt) Cloud Todo Application with Qt Cloud Services
 
+Technologies used in this tutorial:
+* Qt Cloud Services, Enginio Data Storage - for cloud based data storage
+* Node.js - for serverside
+* HTML5, jQuery, Bootstrap, Backbone - for web clients
+* Qt - for native clients (Android & Desktop)
+
 ## Structure of Code
 
 The source code is organized as follows:

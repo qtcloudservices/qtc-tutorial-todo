@@ -108,7 +108,7 @@ var todoApp = {
                 data: JSON.stringify({ text: text })
             }).done(function(res, status) {
                 if(status == "success" && !res.error) {
-                    todoApp.todos.push(res);
+                    todoApp.todos.unshift(res);
                     cb(null, res);
                 } else if(status == "success" && res.error) {
                     cb(res.error.code, res.error.message);

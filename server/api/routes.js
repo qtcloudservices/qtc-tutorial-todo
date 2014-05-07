@@ -24,10 +24,10 @@ function error(code, message){
 function resolveSession(req){
     if(req.headers['x-todo-session'] && (req.headers['x-todo-session'] != "")){
         return req.headers['x-todo-session'];
-    } else if (req.cookies.session && (req.cookies.session != "")){
-        return req.cookies.session;
     } else if (req.query.session && (req.query.session != "")) {
         return req.query.session;
+    } else if (req.cookies.session && (req.cookies.session != "")){
+        return req.cookies.session;
     }
     return null;
 }
@@ -203,7 +203,14 @@ module.exports = function(app) {
         debugRequest(req);
         authenticateRequest(req, function(e, session){
             if(!e){
-                todos.find({userId: "user:"+session.userId}, function(err, todos) {
+                todos.find(
+                    { userId: "user:"+session.userId },
+                    {
+                        sort: [
+                            {"sortBy": "done", "direction": "asc"} ,
+                            {"sortBy": "updatedAt", "direction": "desc"}
+                        ]
+                    }, function(err, todos) {
                     // error; should not happen
                     if (err) { res.json(err); return; }
 
@@ -304,7 +311,7 @@ module.exports = function(app) {
                             if (err) { res.json(err); return; }
 
                             // successful; return deleted status
-                            res.json({ deleted: true });
+                            res.json({ deleted: req.params.todo_id });
                         });
 
                     } else {

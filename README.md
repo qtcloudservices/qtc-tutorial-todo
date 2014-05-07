@@ -109,6 +109,8 @@ Logout user. NOTE! Requires valid session.
 ### GET /api/todos
 Get all todo items. NOTE! Requires valid session.
 
+Todo items are sorted by `done` and `updatedAt` fields. First items are ones with `done` field set as false.
+
 **Response**
 ```javascript
 [                                              // The todo items array
@@ -193,6 +195,6 @@ Delete item. NOTE! Requires valid session.
 **Response**
 ```javascript
 {
-  "deleted": true   // The delete operation status. Always true
+  "deleted": "5356f2aee5bde54e7e005b5d"     // The delete operation response with id of deleted item.
 }
 ```

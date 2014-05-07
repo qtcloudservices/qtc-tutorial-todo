@@ -36,6 +36,138 @@
     <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
     <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
+		
+		<!-- templates -->
+		<script type="text/template" id="HomeView">
+			<div class="jumbotron">
+					<h1>This is Todo!</h1>
+					<p class="lead">The most amazing todo app in the world.</p>
+					<p><a class="btn btn-lg btn-success" href="#signup" role="button">Sign up today</a></p>
+			</div>
+			<div class="row marketing">
+					<div class="col-lg-6">
+							<h4><span class="glyphicon glyphicon-star"></span> It's Simple</h4>
+							<p>It can't be more simple than this. No bells and whistles. Just todos, plain and simple.</p>
+					</div>
+
+					<div class="col-lg-6">
+							<h4><span class="glyphicon glyphicon-cloud"></span> Access Anywhere</h4>
+							<p>Access your todos anywhere from any device. It is powered by Qt Cloud Services.</p>
+					</div>
+			</div>
+		</script>
+
+		<script type="text/template" id="LoginView">
+			<div class="row">
+					<div class="col-md-6 col-md-offset-3">
+							<h2 class="text-center">Please login</h2>
+							<div class="well">
+									<div class="form-group has-feedback">
+											<label class="control-label" for="username">Username</label>
+											<input type="text" class="form-control" id="username">
+											<span class="glyphicon glyphicon-remove form-control-feedback hide"></span>
+									</div>
+									<div class="form-group has-feedback">
+											<label class="control-label" for="password">Password</label>
+											<input type="password" class="form-control" id="password">
+											<span class="glyphicon glyphicon-remove form-control-feedback hide"></span>
+									</div>
+
+									<label class="checkbox">
+											<input id="remember" type="checkbox" value="remember-me"> Remember me
+									</label>
+									<button id="loginbutton" class="btn btn-lg btn-primary btn-block" type="submit">Login</button>
+							</div>
+					</div>
+			</div>
+		</script>
+
+		<script type="text/template" id="MainView">
+			<a href="https://github.com/qtcloudservices/qtc-tutorial-todo"><img style="position: absolute; top: 0; left: 0; border: 0;" src="https://camo.githubusercontent.com/567c3a48d796e2fc06ea80409cc9dd82bf714434/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f6c6566745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_left_darkblue_121621.png"></a>
+			<div id="container" class="container">
+					<div class="header">
+							<ul class="nav nav-pills pull-right">
+									<% if(session && (session != "")) { %>
+											<li id="loggedInUserName"><%= name %></li>
+											<li id="logoutMenuItem"><a href="#logout">Logout</a></li>
+											<li id="loginMenuItem" class="hide"><a href="#login">Login</a></li>
+									<% } else { %>
+											<li id="loggedInUserName" class="hide"></li>
+											<li id="logoutMenuItem" class="hide"><a href="#logout">Logout</a></li>
+											<li id="loginMenuItem"><a href="#login">Login</a></li>
+									<% } %>
+							</ul>
+							<a class="navbar-brand" href="#">Todo</a>
+					</div>
+
+					<div id="main">
+					</div>
+
+					<div class="footer text-center">
+							<p>Read the <a href="">tutorial</a>.</p>
+					</div>
+			</div>
+
+		</script>
+
+		<script type="text/template" id="RegisterView">
+			<div class="row">
+					<div class="col-md-6 col-md-offset-3">
+							<h2 class="text-center">Please Sign Up</h2>
+							<div class="well">
+									<div class="form-group has-feedback">
+											<label class="control-label" for="username">Real Name</label>
+											<input type="text" class="form-control" id="name">
+											<span class="glyphicon glyphicon-remove form-control-feedback hide"></span>
+									</div>
+									<div class="form-group has-feedback">
+											<label class="control-label" for="username">Username</label>
+											<input type="text" class="form-control" id="username">
+											<span class="glyphicon glyphicon-remove form-control-feedback hide"></span>
+									</div>
+									<div class="form-group has-feedback">
+											<label class="control-label" for="password">Password</label>
+											<input type="password" class="form-control" id="password">
+											<span class="glyphicon glyphicon-remove form-control-feedback hide"></span>
+									</div>
+									<button id="registerbutton" class="btn btn-lg btn-primary btn-block" type="submit">Sign Up</button>
+							</div>
+					</div>
+			</div>
+
+		</script>
+
+		<script type="text/template" id="TodosView">
+			<div class="row">
+					<div class="col-md-6 col-md-offset-3">
+							<div class="input-group">
+									<input id="addtodotext" type="text" class="form-control">
+									<span class="input-group-btn">
+											<button id="addtodo" class="btn btn-default btn-primary" type="button">Add</button>
+									</span>
+							</div>
+					</div>
+			</div>
+			<div class="row">
+					<div class="col-md-6 col-md-offset-3">
+							<% if(todos && (todos.length > 0)) { %>
+							<ul class="list-group todolist">
+									<% for(var i=0; i<todos.length; i++) { %>
+									<li class="list-group-item">
+											<button type="button" class="btn btn-danger btn-xs removetodo" data-todo="<%= todos[i].id %>"><span class="glyphicon glyphicon-remove"></span></button>
+											<div class="todotext"><%= todoApp.htmlDecode(todos[i].text) %></div>
+									</li>
+									<% } %>
+							</ul>
+							<% } else { %>
+							<div class="text-center">
+									<h3 class="text-muted">You don't have any todos.</h3>
+							</div>
+							<% } %>
+					</div>
+			</div>
+
+		</script>
 
 </head>
 

@@ -18,4 +18,4 @@ require('./api/routes.js')(app);
 
 // main
 app.listen(port);
-console.log("Todo server started. Listening port " + port);
+console.log("Todo Server started! Open http://localhost:" + port + " in your web browser to test locally.");

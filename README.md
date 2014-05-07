@@ -153,7 +153,7 @@ Add an item. NOTE! Requires valid session.
 }
 ```
 
-### GET      /api/todos/:id
+### GET /api/todos/:id
 Get single item. NOTE! Requires valid session.
 
 **Response**
@@ -189,7 +189,7 @@ Modify item. NOTE! Requires valid session.
 }
 ```
 
-### DELETE   /api/todos/:id
+### DELETE /api/todos/:id
 Delete item. NOTE! Requires valid session.
 
 **Response**

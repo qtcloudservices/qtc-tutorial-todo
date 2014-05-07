@@ -4,18 +4,17 @@ var todoApp = {
         Backbone.history.start();
     },
 
-    loadTemplates: function(views, callback) {
+    loadTemplates: function(views) {
         var deferreds = [];
         $.each(views, function(index, view) {
             if (todoApp[view]) {
-                deferreds.push($.get('js/tpl/' + view + '.html', function(data) {
-                    todoApp[view].prototype.template = _.template(data);
-                }, 'html'));
+              // override template() method to render template element from index html
+              todoApp[view].prototype.template = _.template($("#"+view).html());
+
             } else {
                 console.error(view + " not found");
             }
         });
-        $.when.apply(null, deferreds).done(callback);
     },
 
     setSession: function(username, session){
@@ -101,39 +100,50 @@ var todoApp = {
             }
         },
         addTodo: function(text, cb){
+            var todo = {text: text}
+
+            todoApp.todos.unshift(todo);
+            cb(null, todo);
             $.ajax({
                 type: "POST",
                 contentType: "application/json; charset=utf-8",
                 url: "/api/todos",
-                data: JSON.stringify({ text: text })
+                data: JSON.stringify(todo)
             }).done(function(res, status) {
                 if(status == "success" && !res.error) {
-                    todoApp.todos.unshift(res);
+                    todoApp.todos[_.indexOf(todoApp.todos, todo)] = res;
                     cb(null, res);
                 } else if(status == "success" && res.error) {
+                    todoApp.todos.shift();
                     cb(res.error.code, res.error.message);
                 } else {
+                    todoApp.todos.shift();
                     cb(500, res);
                 }
             })
         },
         removeTodo: function(id, cb){
+            var todo = null;
+            for(var i = 0;i<todoApp.todos.length;i++){
+                if(todoApp.todos[i].id == id){
+                    todo = todoApp.todos[i];
+                    todoApp.todos.splice(i,1);
+                    break;
+                }
+            }
+            cb(null, todo);
             $.ajax({
                 type: "DELETE",
                 contentType: "application/json; charset=utf-8",
                 url: "/api/todos/"+id
             }).done(function(res, status) {
                 if(status == "success" && !res.error) {
-                    for(var i = 0;i<todoApp.todos.length;i++){
-                        if(todoApp.todos[i].id == id){
-                            todoApp.todos.splice(i,1);
-                            break;
-                        }
-                    }
-                    cb(null, res);
+
                 } else if(status == "success" && res.error) {
+                    todoApp.todos.splice(i, 1, todo);
                     cb(res.error.code, res.error.message);
                 } else {
+                    todoApp.todos.splice(i, 1, todo);
                     cb(500, res);
                 }
             })
@@ -241,13 +251,12 @@ var todoApp = {
 
 
 $(document).on("ready", function () {
-    todoApp.loadTemplates(["MainView", "HomeView", "LoginView", "RegisterView", "TodosView"], function () {
-        todoApp.getSession();
-        todoApp.initialize();
+    todoApp.loadTemplates(["MainView", "HomeView", "LoginView", "RegisterView", "TodosView"]);
+    todoApp.getSession();
+    todoApp.initialize();
 
-        // preload all todos and start app
-        todoApp.api.getAllTodos(function(err, res){
-            todoApp.start();
-        });
+    // preload all todos and start app
+    todoApp.api.getAllTodos(function(err, res){
+        todoApp.start();
     });
 });

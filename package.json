@@ -1,0 +1,35 @@
+{
+	"name": "qtc-tutorial-todo",
+	"version": "0.0.1",
+	"description": "Creating Serverside, Cross-Platform (HTML5 & Qt) Cloud Todo Application with Qt Cloud Services",
+    "tags": [
+        "qt",
+        "cloud",
+        "tutorial"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/qtcloudservices/qtc-tutorial-todo"
+    },
+    "bugs": {
+        "url": "https://github.com/qtcloudservices/qtc-tutorial-todo/issues"
+    },
+    "license": "MIT",
+    "engines": {
+        "node": ">= 0.10.0"
+    },
+	"main": "server/server.js",
+	"author": "Miska Kaipiainen <miska.kaipiainen@gmail.com>",
+	"dependencies": {
+		"qtc": "",
+		"express": "4.*",
+        "body-parser": "",
+		"express-session": "",
+        "express-method-override":"",
+        "cookie-parser":"",
+        "client-sessions":""
+	},
+    "scripts": {
+        "start": "node server/server.js"
+    }
+}

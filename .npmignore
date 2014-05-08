@@ -1,0 +1,5 @@
+.idea
+lib/config/qtc-conf.default.js
+qtclient
+npm-debug.log
+node_modules

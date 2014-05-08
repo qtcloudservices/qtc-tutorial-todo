@@ -41,7 +41,7 @@
 #include "storage.h"
 #include <QtDebug>
 
-#define REQUEST_URL "http://ry7rixrh.staging-mar-eu-1.qtc.io"
+#define REQUEST_URL "http://qtc-tutorial-todo.qtcloudapp.com/"
 #define REFRESH_INTERVAL 10000
 
 Storage::Storage(ItemModel *model, QObject *parent) :

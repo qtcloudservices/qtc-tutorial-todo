@@ -76,6 +76,7 @@ public:
         DeleteItem
     };
     explicit Storage(ItemModel *model, QObject *parent = 0);
+    ~Storage();
 
     bool loading() const { return m_loading; }
     bool loggedIn() const { return m_loggedIn; }
@@ -85,6 +86,7 @@ public:
     Q_INVOKABLE void registerUser(const QString &realname, const QString& username, const QString& password);
     Q_INVOKABLE void loginUser(const QString& username, const QString& password);
     Q_INVOKABLE void logoutUser();
+    Q_INVOKABLE bool rememberUser();
 
     // Data related invokable functions
     Q_INVOKABLE void initItems();

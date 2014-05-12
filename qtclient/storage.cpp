@@ -40,6 +40,7 @@
 
 #include "storage.h"
 #include <QtDebug>
+#include <QSettings>
 
 #define REQUEST_URL "http://qtc-tutorial-todo.qtcloudapp.com/"
 #define REFRESH_INTERVAL 10000
@@ -49,9 +50,6 @@ Storage::Storage(ItemModel *model, QObject *parent) :
     m_model(model),
     m_networkManager(0),
     m_loading(false),
-    m_loggedIn(false),
-    m_loggedName(""),
-    m_sessionId(""),
     m_localIndex(0),
     m_queueLength(0)
 {
@@ -62,8 +60,22 @@ Storage::Storage(ItemModel *model, QObject *parent) :
     //Configure refresh timer
     connect(&m_refreshTimer, SIGNAL(timeout()), this, SLOT(refreshItems()));
     m_refreshTimer.setInterval(REFRESH_INTERVAL);
+
+    //Get session information
+    QSettings settings("Digia", "Qt Cloud Todo");
+    m_sessionId = settings.value("sessionId", "").toByteArray();
+    m_loggedName = settings.value("name", "").toString();
+    m_loggedIn = !m_sessionId.isEmpty();
 }
 
+Storage::~Storage()
+{
+    // Save session information
+    QSettings settings("Digia", "Qt Cloud Todo");
+    settings.setValue("sessionId", m_sessionId);
+    settings.setValue("name", m_loggedName);
+    settings.sync();
+}
 
 void Storage::registerUser(const QString &name, const QString& username, const QString& password)
 {
@@ -95,6 +107,11 @@ void Storage::logoutUser()
     m_refreshTimer.stop();
     m_model->clearItems();
     setLogged(false, "", "");
+}
+
+bool Storage::rememberUser()
+{
+    return !m_sessionId.isEmpty();
 }
 
 void Storage::refreshItems()

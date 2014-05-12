@@ -95,9 +95,6 @@ Item {
                 color: "#333333"
                 font.pixelSize: Math.min(parent.width*0.08, parent.height*0.4)
                 text: storage.loggedName
-                visible: opacity > 0.05
-                opacity: storage.loggedIn
-                Behavior on opacity { NumberAnimation{} }
             }
 
             MouseArea {

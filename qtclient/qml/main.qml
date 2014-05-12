@@ -96,6 +96,11 @@ Window {
             id: mainView
             anchors.fill: parent
             initialItem: Qt.resolvedUrl("Home.qml");
+
+            Component.onCompleted: {
+                if (storage.rememberUser())
+                    mainView.push(Qt.resolvedUrl("Todo.qml"));
+            }
         }
 
         ErrorInfo { id: errorInfo }

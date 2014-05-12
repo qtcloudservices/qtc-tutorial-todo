@@ -254,8 +254,7 @@ void Storage::requestFinished(QNetworkReply *reply)
             }
             case LoginUser:
             {
-                // Login user, start refreshTimer
-                m_refreshTimer.start();
+                // Login user
                 QJsonObject data = replyData.object();
                 setLogged(true, data.value("name").toString(), data.value("session").toString().toUtf8());
                 emit userLogged();
@@ -264,6 +263,8 @@ void Storage::requestFinished(QNetworkReply *reply)
             case InitItems:
             {
                 // Init all todo-items. This will occurs just after logging in
+                // Start refresh timer
+                m_refreshTimer.start();
                 m_model->initData(replyData.array());
                 m_localIndex = m_model->rowCount() + 1;
                 break;

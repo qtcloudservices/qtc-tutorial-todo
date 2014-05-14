@@ -1,0 +1,18 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/main.qml</file>
+        <file>qml/Button.qml</file>
+        <file>qml/CheckBox.qml</file>
+        <file>qml/Login.qml</file>
+        <file>qml/TextInputField.qml</file>
+        <file>qml/Ad.qml</file>
+        <file>qml/Home.qml</file>
+        <file>qml/TextNameInputField.qml</file>
+        <file>qml/Todo.qml</file>
+        <file>qml/ImageButton.qml</file>
+        <file>qml/LoadingInfo.qml</file>
+        <file>qml/ErrorInfo.qml</file>
+        <file>qml/TodoText.qml</file>
+        <file>qml/Storage.js</file>
+    </qresource>
+</RCC>

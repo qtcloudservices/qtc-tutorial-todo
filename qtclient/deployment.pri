@@ -19,5 +19,8 @@ android-no-sdk {
     }
     INSTALLS += target
 }
+else {
+    INSTALLS += target
+}
 
 export(INSTALLS)

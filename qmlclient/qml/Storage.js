@@ -59,7 +59,7 @@ function checkError(data)
         return true;
     }
     else {
-        error(obj.code, obj.message)
+        error(obj.code, obj.message, false)
         return false;
     }
 }

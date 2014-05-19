@@ -44,12 +44,12 @@ var sessionId = ""
 var localId = 0
 
 // Show error message and logout if necessary
-function error(code, message)
+function error(code, message, forceLogout)
 {
-    if (mainView.depth > 1 && code === 403)
+    if (mainView.depth > 1 && (forceLogout || code === 403))
         logoutUser()
 
-    errorInfo.show(message)
+    errorInfo.show(message === "" ? qsTr("Unknown error") : message)
 }
 
 function checkError(data)
@@ -149,7 +149,7 @@ function registerUser(name, username, password)
                     loginUser(username, password);  // Login after registering
             }
             else {
-                error(doc.status, doc.statusText)
+                error(doc.status, doc.statusText, true)
             }
         }
     }
@@ -183,7 +183,7 @@ function loginUser(username, password)
                 }
             }
             else {
-                error(doc.status, doc.statusText)
+                error(doc.status, doc.statusText, true)
             }
         }
     }
@@ -198,6 +198,8 @@ function logoutUser()
     // Pop pages
     while (mainView.depth > 1)
         mainView.pop()
+
+    app.loading = false
 
     // Hide keyboard
     Qt.inputMethod.hide()
@@ -231,7 +233,7 @@ function initItems()
                 }
             }
             else {
-                error(doc.status, doc.statusText)
+                error(doc.status, doc.statusText, false)
             }
         }
     }
@@ -256,7 +258,7 @@ function refreshItems()
                     refreshModel(data);
             }
             else {
-                error(doc.status, doc.statusText)
+                error(doc.status, doc.statusText, false)
             }
         }
     }
@@ -293,7 +295,7 @@ function addItem(name)
                     }
                 }
                 else {
-                    error(doc.status, doc.statusText)
+                    error(doc.status, doc.statusText, false)
                 }
             }
         }
@@ -336,7 +338,7 @@ function finishItem(row)
                     }
                 }
                 else {
-                    error(doc.status, doc.statusText)
+                    error(doc.status, doc.statusText, false)
                 }
             }
         }

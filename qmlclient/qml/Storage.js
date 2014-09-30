@@ -38,7 +38,7 @@
 **
 ****************************************************************************/
 
-var REQUEST_URL = "http://mar-eu-1-7o4t65lv.qtcloudapp.com"
+var REQUEST_URL = "http://qtc-tutorial-todo.qtcloudapp.com"
 var firstDoneIndex = 0
 var sessionId = ""
 var localId = 0

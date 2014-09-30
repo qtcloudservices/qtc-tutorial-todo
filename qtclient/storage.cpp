@@ -42,7 +42,7 @@
 #include <QtDebug>
 #include <QSettings>
 
-#define REQUEST_URL "http://mar-eu-1-7o4t65lv.qtcloudapp.com"
+#define REQUEST_URL "http://qtc-tutorial-todo.qtcloudapp.com"
 #define REFRESH_INTERVAL 10000
 
 

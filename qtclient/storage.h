@@ -49,6 +49,7 @@
 #include <QJsonValue>
 #include <QJsonDocument>
 #include <itemmodel.h>
+#include <websocketclient.h>
 
 class Storage : public QObject
 {
@@ -73,7 +74,8 @@ public:
         RefreshItems,
         AddItem,
         FinishItem,
-        DeleteItem
+        DeleteItem,
+        WebSocketUri
     };
     explicit Storage(ItemModel *model, QObject *parent = 0);
     ~Storage();
@@ -90,7 +92,7 @@ public:
 
     // Data related invokable functions
     Q_INVOKABLE void initItems();
-    Q_INVOKABLE void addItem(const QString& name);
+    Q_INVOKABLE void addItem(const QString& name, const QString& globalId = "");
     Q_INVOKABLE void finishItem(int row);
     Q_INVOKABLE void deleteItem(int row);
 
@@ -104,21 +106,30 @@ signals:
 private slots:
     void requestFinished(QNetworkReply* reply);
     void refreshItems();
+    void messageReceived(QString message);
 
 private:
     QNetworkRequest createRequest(const QString& path, bool sessionId = false);
     QNetworkReply* startRequest(const QNetworkRequest& request, Storage::RequestType type, bool loading = true, const QJsonObject& data = QJsonObject());
+    QNetworkReply* getWebSocketUri();
+    QString getRandomString() const;
     bool isError(const QJsonDocument& data);
     void setLoading(bool para);
-    void setLogged(bool para, const QString& name, const QByteArray& sessionId);
+    void setLogged(bool para, const QString& name, const QString& userId, const QByteArray& sessionId);
 
     ItemModel *m_model;
+
+    QString deviceId;
+    // WebSocketClient object
+    WebSocketClient *m_ws_client;
+
     QNetworkAccessManager *m_networkManager;
     bool m_loading;
     QTimer m_refreshTimer;
 
     bool m_loggedIn;
     QString m_loggedName;
+    QString m_userId;
     QByteArray m_sessionId;
     int m_localIndex;
     int m_queueLength;

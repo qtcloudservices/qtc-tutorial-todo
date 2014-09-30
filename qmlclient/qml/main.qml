@@ -40,6 +40,7 @@
 
 import QtQuick 2.2
 import QtQuick.Controls 1.1
+import Qt.WebSockets 1.0
 import "Storage.js" as Storage
 
 Item {
@@ -50,6 +51,18 @@ Item {
     property bool loading: false
     property bool loggedIn: false
     property string loggedName: ""
+    property string device: ""
+
+    function randomString() {
+        var chars = "abcdefghiklmnopqrstuvwxyz";
+        var string_length = 8;
+        var randomstring = '';
+        for (var i=0; i<string_length; i++) {
+            var rnum = Math.floor(Math.random() * chars.length);
+            randomstring += chars.substring(rnum,rnum+1);
+        }
+        return randomstring.toString();
+    }
 
     // Register user
     function registerUser(name, username, password)
@@ -60,6 +73,7 @@ Item {
     // Login user
     function loginUser(username, password)
     {
+        device = randomString()
         Storage.loginUser(username, password)
     }
 
@@ -70,29 +84,42 @@ Item {
     }
 
     // Add new item to the model
-    function addItem(name)
+    function addItem(name, itemId)
     {
-        Storage.addItem(name);
+        Storage.addItem(name, itemId);
     }
 
     // Finish item
-    function finishItem(row)
+    function finishItem(row, remote)
     {
-        Storage.finishItem(row);
+        Storage.finishItem(row, remote);
     }
 
     // Delete item
-    function deleteItem(row)
+    function deleteItem(row, remote)
     {
-        Storage.deleteItem(row);
+        Storage.deleteItem(row, remote);
     }
 
-    Timer {
-        id: refreshTimer
-        interval: 10000
-        repeat: true
-        onTriggered: Storage.refreshItems()
+    WebSocket {
+        id: socket
+
+        active: true
+        onTextMessageReceived: {
+            Storage.handleWebsocketMessage(message)
+        }
+        onStatusChanged: {
+            if (socket.status == WebSocket.Error) {
+              console.log("Error: " + socket.errorString)
+            } else if (socket.status == WebSocket.Open) {
+              console.log("WebSocket connected")
+
+            } else if (socket.status == WebSocket.Closed) {
+              console.log("WebSocket closed")
+            }
+        }
     }
+
 
     ListModel {
         id: itemModel

@@ -2,7 +2,8 @@ todoApp.TodosView = Backbone.View.extend({
 
     events:{
         "click #addtodo": "addtodo",
-        "click .removetodo": "removetodo"
+        "click .removetodo": "removetodo",
+        "click .finishtodo": "finishtodo"
     },
     render:function () {
         this.$el.html(this.template({ todos: todoApp.todos }));
@@ -21,6 +22,21 @@ todoApp.TodosView = Backbone.View.extend({
             }
             self.render();
         });
+    },
+    finishtodo:function (t) {
+        var self = this;
+        var btnElem = t.currentTarget;
+        var todoId = $(btnElem).data("todo");
+        if(todoId){
+            todoApp.api.finishTodo(todoId, function(updateTodoError, updateTodoRes){
+                if(!updateTodoError){
+                    // everything was smooth...
+                } else {
+                    // the request failed for some reason; should not happen
+                }
+                self.render();
+            });
+        }
     },
     removetodo:function (t) {
         var self = this;

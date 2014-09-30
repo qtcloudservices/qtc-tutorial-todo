@@ -50,7 +50,7 @@ Item {
     {
         if (name !== "")
         {
-            app.addItem(name)
+            app.addItem(name, null)
             textinput.text = "";
         }
     }
@@ -121,7 +121,7 @@ Item {
             anchors.left: parent.left
             height: parent.height
             width: parent.width * 0.8
-            onAccepted: addItem(text)
+            onAccepted: addItem(text,  null)
         }
 
         Button {
@@ -130,7 +130,7 @@ Item {
             height: parent.height
             text: qsTr("Add")
             fontSize: Math.min(width * 0.3, height * 0.3)
-            onClicked: addItem(textinput.text)
+            onClicked: addItem(textinput.text, null)
         }
     }
 
@@ -195,9 +195,9 @@ Item {
                 }
                 onClicked: {
                     if (itemDone)
-                        app.deleteItem(index);
+                        app.deleteItem(index, true);
                     else
-                        app.finishItem(index);
+                        app.finishItem(index, true);
                 }
 
                 NumberAnimation {

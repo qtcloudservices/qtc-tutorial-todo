@@ -42,8 +42,9 @@
 #include <QtDebug>
 #include <QSettings>
 
-#define REQUEST_URL "http://qtc-tutorial-todo.qtcloudapp.com/"
+#define REQUEST_URL "http://qtc-tutorial-todo.qtcloudapp.com"
 #define REFRESH_INTERVAL 10000
+
 
 Storage::Storage(ItemModel *model, QObject *parent) :
     QObject(parent),
@@ -56,15 +57,16 @@ Storage::Storage(ItemModel *model, QObject *parent) :
     //The QNetworkAccessManager class allows the application to send network requests and receive replies
     m_networkManager = new QNetworkAccessManager(this);
     connect(m_networkManager, SIGNAL(finished(QNetworkReply*)), this, SLOT(requestFinished(QNetworkReply*)));
-
+    deviceId = getRandomString();
     //Configure refresh timer
-    connect(&m_refreshTimer, SIGNAL(timeout()), this, SLOT(refreshItems()));
-    m_refreshTimer.setInterval(REFRESH_INTERVAL);
+//    connect(&m_refreshTimer, SIGNAL(timeout()), this, SLOT(refreshItems()));
+//    m_refreshTimer.setInterval(REFRESH_INTERVAL);
 
     //Get session information
     QSettings settings("Digia", "Qt Cloud Todo");
     m_sessionId = settings.value("sessionId", "").toByteArray();
     m_loggedName = settings.value("name", "").toString();
+    m_userId = settings.value("userId", "").toString();
     m_loggedIn = !m_sessionId.isEmpty();
 }
 
@@ -73,8 +75,45 @@ Storage::~Storage()
     // Save session information
     QSettings settings("Digia", "Qt Cloud Todo");
     settings.setValue("sessionId", m_sessionId);
+    settings.setValue("userId", m_userId);
     settings.setValue("name", m_loggedName);
     settings.sync();
+}
+
+
+QNetworkReply* Storage::getWebSocketUri()
+{
+    QNetworkRequest request;
+    request.setUrl(QUrl(QString("%1%2").arg(REQUEST_URL).arg("/api/websocket")));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    request.setRawHeader(QByteArray("x-todo-session"), m_sessionId);
+
+    QNetworkReply *reply = m_networkManager->get(request);
+    reply->setProperty("requestType", WebSocketUri);
+    return reply;
+}
+
+void Storage::messageReceived(QString message) {
+    qDebug() << "Message received:" << message;
+    QJsonDocument jsonResponse = QJsonDocument::fromJson(message.toUtf8());
+    QJsonObject jsonObj = jsonResponse.object();
+    QString event = jsonObj.value("meta").toObject().value("eventName").toString();
+    QJsonObject todo = jsonObj.value("object").toObject();
+
+    if(event == "delete") {
+        m_model->deleteItem(m_model->itemRow(todo.value("id").toString()));
+    }
+    if(todo.value("device") != deviceId) {
+        if(event == "create") {
+            addItem(todo.value("text").toString(), todo.value("id").toString());
+
+        }
+        else if(event == "update") {
+            m_model->finishItem(m_model->itemRow(todo.value("id").toString()));
+        }
+    }
+
+    setLoading(false);
 }
 
 void Storage::registerUser(const QString &name, const QString& username, const QString& password)
@@ -106,7 +145,7 @@ void Storage::logoutUser()
     // Logout locally
     m_refreshTimer.stop();
     m_model->clearItems();
-    setLogged(false, "", "");
+    setLogged(false, "", "","");
 }
 
 bool Storage::rememberUser()
@@ -128,20 +167,25 @@ void Storage::initItems()
     startRequest(createRequest("/api/todos", true), InitItems);
 }
 
-void Storage::addItem(const QString& name)
+void Storage::addItem(const QString& name, const QString& globalId)
 {
     // Generate new localId and add item to the model with localId
     QString localId = QString("localId_%1").arg(++m_localIndex);
-    m_model->addItem(localId, name, false, true);
+    m_model->addItem(localId, name, false, false);
 
-    QJsonObject data;
-    data["text"] = name;
-    data["done"] = false;
-
-    // Send request to the server
-    QNetworkReply *reply = startRequest(createRequest("/api/todos", true), AddItem, false, data);
-    if (reply != 0)
-        reply->setProperty("localId", localId);
+    if(globalId == "") {
+        QJsonObject data;
+        data["text"] = name;
+        data["done"] = false;
+        data["device"] = deviceId;
+        // Send request to the server
+        QNetworkReply *reply = startRequest(createRequest("/api/todos", true), AddItem, false, data);
+        if (reply != 0)
+            reply->setProperty("localId", localId);
+    }
+    else {
+        m_model->updateLocalId(localId, globalId);
+    }
 }
 
 void Storage::finishItem(int row)
@@ -154,6 +198,7 @@ void Storage::finishItem(int row)
     // Send requeset to the server
     QJsonObject data;
     data["done"] = true;
+    data["device"] = deviceId;
     startRequest(createRequest(QString("/api/todos/%1").arg(id), true), FinishItem, false, data);
 }
 
@@ -246,6 +291,14 @@ void Storage::requestFinished(QNetworkReply *reply)
         QJsonDocument replyData = QJsonDocument::fromJson(reply->readAll());
         if (!isError(replyData)) {
             switch (requestType) {
+            case WebSocketUri:
+            {
+
+                QJsonObject data = replyData.object();
+                m_ws_client = new WebSocketClient(QUrl(data.value("uri").toString()), this);
+                QObject::connect(m_ws_client, &WebSocketClient::onMessageReceived, this, &Storage::messageReceived);
+                break;
+            }
             case RegisterUser:
             {
                 // Send signal that user has registered
@@ -256,7 +309,7 @@ void Storage::requestFinished(QNetworkReply *reply)
             {
                 // Login user
                 QJsonObject data = replyData.object();
-                setLogged(true, data.value("name").toString(), data.value("session").toString().toUtf8());
+                setLogged(true, data.value("name").toString(), data.value("userId").toString(), data.value("session").toString().toUtf8());
                 emit userLogged();
                 break;
             }
@@ -264,9 +317,10 @@ void Storage::requestFinished(QNetworkReply *reply)
             {
                 // Init all todo-items. This will occurs just after logging in
                 // Start refresh timer
-                m_refreshTimer.start();
+                //m_refreshTimer.start();
                 m_model->initData(replyData.array());
                 m_localIndex = m_model->rowCount() + 1;
+                this->getWebSocketUri();
                 break;
             }
             case RefreshItems:
@@ -305,11 +359,26 @@ void Storage::setLoading(bool para)
     emit loadingChanged();
 }
 
-void Storage::setLogged(bool para, const QString& name, const QByteArray& sessionId)
+void Storage::setLogged(bool para, const QString& name, const QString& userId, const QByteArray& sessionId)
 {
     m_loggedIn = para;
     m_loggedName = name;
     m_sessionId = sessionId;
-
+    m_userId = userId;
     emit loggedInChanged();
+}
+
+QString Storage::getRandomString() const
+{
+   const QString possibleCharacters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+   const int randomStringLength = 12; // assuming you want random strings of 12 characters
+
+   QString randomString;
+   for(int i=0; i<randomStringLength; ++i)
+   {
+       int index = qrand() % possibleCharacters.length();
+       QChar nextChar = possibleCharacters.at(index);
+       randomString.append(nextChar);
+   }
+   return randomString;
 }

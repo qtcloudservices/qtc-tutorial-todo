@@ -4,6 +4,7 @@ var crypto = require('crypto');
 // Qt Cloud Services
 var qtc = require('qtc');
 var qtcConfig = require('../config/qtc-conf');
+var mws = new qtc.Mws(qtcConfig.mws);
 var eds = new qtc.Eds( qtcConfig.eds );
 var todos = eds.collection('todos');
 var users = eds.collection('users');
@@ -83,6 +84,33 @@ function debugResponse(data){
 }
 
 module.exports = function(app) {
+    app.get('/api/websocket', function(req, res) {
+      authenticateRequest(req, function(e, session){
+          if(!e){
+
+            mws.createSocket(["user:"+session.userId], function(e, mwsResponse) {
+              res.json(mwsResponse);
+            });
+          } else {
+              res.json(error(403, "Access Denied!"));
+
+          }
+        });
+    });
+
+    app.post('/api/websocket/messages', function(req, res) {
+      debugRequest(req);
+      var payload = req.body.payload;
+      console.log('got websocket request:')
+      console.log(payload)
+
+      mws.send(JSON.stringify(payload), { sockets: null, tags: [payload.object.userId] }, function(e, mwsResponse) {
+        console.log('send websocket message:');
+        console.log(mwsResponse);
+        res.json(mwsResponse);
+      })
+
+    });
 
     app.post('/api/register', function(req, res) {
         debugRequest(req);
@@ -227,10 +255,12 @@ module.exports = function(app) {
         debugRequest(req);
         authenticateRequest(req, function(e, session){
             if(!e){
+
                 todos.insert({
                     userId: "user:"+session.userId,
                     text : req.body.text,
-                    done : false
+                    done : false,
+                    device : req.body.device || ""
                 }, function(err, todoItem) {
                     if (err) { res.json(err); return; }
 
@@ -278,6 +308,7 @@ module.exports = function(app) {
                         var updatedTodo = {};
                         if(typeof req.body.text != "undefined") updatedTodo.text = req.body.text;
                         if(typeof req.body.done != "undefined") updatedTodo.done = req.body.done;
+                        if(typeof req.body.device != "undefined") updatedTodo.device = req.body.device;
 
                         todos.update(req.params.todo_id, updatedTodo, function (err, todoItem) {
                             if (err) { res.json(err); return; }

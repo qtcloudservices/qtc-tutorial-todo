@@ -10,6 +10,7 @@
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
     <link href="css/narrow.css" rel="stylesheet">
     <link href="css/login.css" rel="stylesheet">
+		<link href="css/todo.css" rel="stylesheet">
     <style>
         #loggedInUserName{
             padding: 10px 15px;
@@ -164,8 +165,13 @@
 							<ul class="list-group todolist">
 									<% for(var i=0; i<todos.length; i++) { %>
 									<li class="list-group-item">
+										<% if(todos[i].done) { %>
 											<button type="button" class="btn btn-danger btn-xs removetodo" data-todo="<%= todos[i].id %>"><span class="glyphicon glyphicon-remove"></span></button>
-											<div class="todotext"><%= todoApp.htmlDecode(todos[i].text) %></div>
+										<% } %>
+										<% if(!todos[i].done) { %>
+											<button type="button" class="btn btn-success btn-xs finishtodo" data-todo="<%= todos[i].id %>"><span class="glyphicon glyphicon-ok"></span></button>
+										<% } %>
+											<div class="todotext <% if(todos[i].done){ %> done <% } %>"><%= todoApp.htmlDecode(todos[i].text) %></div>
 									</li>
 									<% } %>
 							</ul>

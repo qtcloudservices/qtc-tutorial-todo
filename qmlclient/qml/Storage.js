@@ -177,7 +177,8 @@ function loginUser(username, password)
                     app.loggedIn = true
                     app.loggedName = data.name
                     sessionId = data.session
-
+                    // Open WebSocket connection
+                    connectToWebSocket()
                     // Init items after login
                     initItems()
                 }
@@ -190,10 +191,29 @@ function loginUser(username, password)
     doc.send(JSON.stringify({ "username": username, "password": password }));
 }
 
+function connectToWebSocket() {
+    var doc = new XMLHttpRequest();
+    doc.open("GET", REQUEST_URL + "/api/websocket", true);
+    doc.setRequestHeader('x-todo-session', sessionId);
+    doc.setRequestHeader('Content-Type', 'application/json');
+    doc.onreadystatechange = function()
+    {
+        // When ready
+        if (doc.readyState === 4) {
+
+            // If OK
+            if (doc.status === 200) {
+                var data = JSON.parse(doc.responseText);
+                console.log("Open WebSocket connection", data.uri)
+                socket.url = data.uri
+            }
+        }
+    }
+    doc.send()
+}
+
 function logoutUser()
 {
-    // Stop refreshing
-    refreshTimer.stop()
 
     // Pop pages
     while (mainView.depth > 1)
@@ -228,7 +248,6 @@ function initItems()
                 if (checkError(data)) {
                     initModel(data)
                     localId = itemModel.count + 1
-                    refreshTimer.start()
                     app.loading = false
                 }
             }
@@ -265,59 +284,19 @@ function refreshItems()
     doc.send();
 }
 
-function addItem(name)
+function addItem(name, itemId)
 {
+    console.log('Create item '+name)
+    var locId = itemId || "local_" + (localId++);
+    var processing = itemId ? false : true
     // Add item locally
-    var locId = "local_" + (localId++);
-    itemModel.insert(0, { "itemName": name, "itemDone": false, "itemId": locId, "itemProcessing": true })
+    itemModel.insert(0, { "itemName": name, "itemDone": false, "itemId": locId, "itemProcessing": processing  })
     firstDoneIndex++;
-
-    // Send info to the server
-    var doc = new XMLHttpRequest();
-    doc.open("POST", REQUEST_URL + "/api/todos", true);
-    doc.setRequestHeader('Content-Type', 'application/json');
-    doc.setRequestHeader('x-todo-session', sessionId);
-    doc.onreadystatechange = function()
-    {
-        // When ready
-        if (doc.readyState === 4) {
-
-            // If OK
-            if (doc.status === 200) {
-                var data = JSON.parse(doc.responseText);
-                if (checkError(data)) {
-                    for (var i=0; i<itemModel.count; i++) {
-                        if (itemModel.get(i).itemId === locId) {
-                            itemModel.setProperty(i, "itemId", data.id);
-                            itemModel.setProperty(i, "itemProcessing", false)
-                            break;
-                        }
-                    }
-                }
-                else {
-                    error(doc.status, doc.statusText, false)
-                }
-            }
-        }
-    }
-    doc.send(JSON.stringify({ "text": name, "done": false }));
-}
-
-function finishItem(row)
-{
-    if (row >= 0 && row < itemModel.count)
-    {
-        // Set item finished locally
-        itemModel.setProperty(row, "itemDone", true);
-        itemModel.setProperty(row, "itemProcessing", true);
-        var obj = itemModel.get(row)
-        if (row !== firstDoneIndex && row !== (firstDoneIndex-1))
-            itemModel.move(row,firstDoneIndex-1,1)
-        firstDoneIndex--;
-
-        // Send information to the server
+    // if itemId not provided sync to backend
+    if(!itemId){
+        // Send info to the server
         var doc = new XMLHttpRequest();
-        doc.open("PUT", REQUEST_URL + "/api/todos/"+obj.itemId, true);
+        doc.open("POST", REQUEST_URL + "/api/todos", true);
         doc.setRequestHeader('Content-Type', 'application/json');
         doc.setRequestHeader('x-todo-session', sessionId);
         doc.onreadystatechange = function()
@@ -330,35 +309,117 @@ function finishItem(row)
                     var data = JSON.parse(doc.responseText);
                     if (checkError(data)) {
                         for (var i=0; i<itemModel.count; i++) {
-                            if (itemModel.get(i).itemId === data.id) {
+                            if (itemModel.get(i).itemId === locId) {
+                                itemModel.setProperty(i, "itemId", data.id);
                                 itemModel.setProperty(i, "itemProcessing", false)
                                 break;
                             }
                         }
                     }
-                }
-                else {
-                    error(doc.status, doc.statusText, false)
+                    else {
+                        error(doc.status, doc.statusText, false)
+                    }
                 }
             }
         }
-        doc.send(JSON.stringify({ "text": obj.itemName, "done": true }));
+
+        doc.send(JSON.stringify({ "text": name, "done": false, "device": device }));
     }
 }
 
-function deleteItem(row)
+function finishItem(row, remote)
 {
+    console.log('Complete item')
+    var processing = remote ? true : false
+    if (row >= 0 && row < itemModel.count)
+    {
+        // Set item finished locally
+        itemModel.setProperty(row, "itemDone", true);
+        itemModel.setProperty(row, "itemProcessing", processing);
+        var obj = itemModel.get(row)
+        if (row !== firstDoneIndex && row !== (firstDoneIndex-1))
+            itemModel.move(row,firstDoneIndex-1,1)
+        firstDoneIndex--;
+        if(remote === true) {
+            // Send information to the server
+            var doc = new XMLHttpRequest();
+            doc.open("PUT", REQUEST_URL + "/api/todos/"+obj.itemId, true);
+            doc.setRequestHeader('Content-Type', 'application/json');
+            doc.setRequestHeader('x-todo-session', sessionId);
+            doc.onreadystatechange = function()
+            {
+                // When ready
+                if (doc.readyState === 4) {
+
+                    // If OK
+                    if (doc.status === 200) {
+                        var data = JSON.parse(doc.responseText);
+                        if (checkError(data)) {
+                            for (var i=0; i<itemModel.count; i++) {
+                                if (itemModel.get(i).itemId === data.id) {
+                                    itemModel.setProperty(i, "itemProcessing", false)
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    else {
+                        error(doc.status, doc.statusText, false)
+                    }
+                }
+            }
+            doc.send(JSON.stringify({ "text": obj.itemName, "done": true, "device": device }));
+        }
+    }
+}
+
+function deleteItem(row, remote)
+{
+    console.log("Delete item")
     if (row >= 0 && row < itemModel.count)
     {
         // Delete locally
         var id = itemModel.get(row).itemId;
         itemModel.remove(row);
 
-        // Send info to server
-        var doc = new XMLHttpRequest();
-        doc.open("DELETE", REQUEST_URL + "/api/todos/"+id, true);
-        doc.setRequestHeader('Content-Type', 'application/json');
-        doc.setRequestHeader('x-todo-session', sessionId);
-        doc.send();
+        if(remote === true) {
+            // Send info to server
+            var doc = new XMLHttpRequest();
+            doc.open("DELETE", REQUEST_URL + "/api/todos/"+id, true);
+            doc.setRequestHeader('Content-Type', 'application/json');
+            doc.setRequestHeader('x-todo-session', sessionId);
+            doc.send();
+        }
+    }
+}
+
+function handleWebsocketMessage(message) {
+    var messageJson = JSON.parse(message)
+    var event = messageJson.meta.eventName
+    var object = messageJson.object
+    console.log("Message received", event, object.text);
+    console.log("Message payload:" ,message);
+
+    if(object.device !== device) { // ignore events created by this app
+        var i
+        if(event === "create") {
+            addItem(object.text, object.id)
+        }
+        else if(event === "update") {
+            for (i=itemModel.count; i--;) {
+                if( object.id === itemModel.get(i).itemId) {
+                    finishItem(i, false)
+                    break;
+                }
+            }
+        }
+    }
+    if(event === "delete") {
+        for (i=itemModel.count; i--;) {
+            if( object.id === itemModel.get(i).itemId) {
+                deleteItem(i, false)
+                break;
+            }
+        }
     }
 }

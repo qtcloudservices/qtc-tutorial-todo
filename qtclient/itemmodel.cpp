@@ -272,5 +272,15 @@ QString ItemModel::itemId(int row) const
     if (row >= 0 && row < m_data.size())
         return m_data[row]->id();
 
+
     return "";
+}
+
+int ItemModel::itemRow(const QString& id) const
+{
+    for(int i=0; i< m_data.size(); i++) {
+        if(m_data[i]->id()== id)
+            return i;
+    }
+    return -1;
 }

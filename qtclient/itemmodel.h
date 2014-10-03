@@ -79,6 +79,7 @@ public:
     void setProcessing(int row, bool processing);
 
     QString itemId(int row) const;
+    int itemRow(const QString& id) const;
 
 private:
     void modifyItem(int row, const QString& name, bool done);

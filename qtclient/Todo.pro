@@ -25,3 +25,5 @@ HEADERS += \
 
 OTHER_FILES += \
     Readme.md
+
+ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
